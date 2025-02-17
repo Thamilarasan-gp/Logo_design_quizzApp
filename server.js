@@ -93,13 +93,17 @@ app.post('/api/save-result', async (req, res) => {
     }
 });
 
-// Modified leaderboard endpoint to sort by recent submissions first
+// Modified leaderboard endpoint to sort by score and completion time
 app.get('/api/leaderboard', async (req, res) => {
     try {
         console.log('Fetching leaderboard...');
         
         const results = await Result.find()
-            .sort({ submittedAt: -1 }) // Sort by submission time (most recent first)
+            .sort({ 
+                score: -1,  // First sort by score (highest first)
+                completionTime: 1,  // Then by completion time (lowest first)
+                submittedAt: -1  // If score and time are same, show most recent first
+            })
             .limit(10);
         
         console.log('Found results:', results);
