@@ -6,7 +6,11 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['https://logo-design-quizz-app-fronntend.vercel.app', 'http://localhost:3000'],
+    origin: [
+        'https://logo-design-quizz-app-fronntend-luse4lksm.vercel.app',
+        'https://logo-design-quizz-app-fronntend.vercel.app',
+        'http://localhost:3000'
+    ],
     methods: ['GET', 'POST'],
     credentials: true
 }));
