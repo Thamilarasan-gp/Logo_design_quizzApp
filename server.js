@@ -5,7 +5,11 @@ const cors = require('cors');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['https://logo-design-quizz-app-fronntend.vercel.app', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
 app.use(express.json());
 
 // MongoDB connection with better error handling and logging
