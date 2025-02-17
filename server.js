@@ -9,11 +9,14 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB connection with better error handling and logging
-mongoose.connect('mongodb+srv://thamilprakasam2005:appichithamil@cluster0.qqwny.mongodb.net/practice', {
+
+const uri = "mongodb+srv://thamilprakasam2005:appichithamil@cluster0.qqwny.mongodb.net/practice";
+
+mongoose.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
-    console.log('MongoDB connected successfully to quizDB');
+    console.log('MongoDB connected successfully to practice DB');
 }).catch(err => {
     console.error('MongoDB connection error:', err);
 });
