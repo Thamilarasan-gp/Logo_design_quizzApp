@@ -128,10 +128,11 @@ testBatchValidation();
 // Add session tracking
 const activeQuizSessions = new Map();
 
-// Modified save result endpoint with better error handling
+// Modified save result endpoint with retry logic
 app.post('/api/save-result', async (req, res) => {
     try {
-        const { name, score, completionTime, entryTime, batchId } = req.body;
+        const { name, score, completionTime, entryTime } = req.body;
+        const { batchId } = req.query; // Extract batchId from query parameters
         
         console.log('Received save request:', { name, score, completionTime, entryTime, batchId });
 
@@ -173,10 +174,33 @@ app.post('/api/save-result', async (req, res) => {
             });
         }
 
-        res.status(500).json({ 
-            error: 'Failed to save result',
-            message: 'Please try again'
-        });
+        // Retry saving the result
+        try {
+            const result = new Result({
+                name,
+                score,
+                completionTime,
+                batchId,
+                quizStartTime: new Date(entryTime),
+                entryTime: new Date(entryTime),
+                submittedAt: new Date()
+            });
+
+            await result.save();
+            console.log('Result saved successfully on retry:', result);
+            
+            res.json({ 
+                success: true, 
+                result,
+                message: 'Result saved successfully'
+            });
+        } catch (retryError) {
+            console.error('Retry save result error:', retryError);
+            res.status(500).json({ 
+                error: 'Failed to save result',
+                message: 'Please try again'
+            });
+        }
     }
 });
 
