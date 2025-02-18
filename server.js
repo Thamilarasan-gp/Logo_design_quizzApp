@@ -67,20 +67,20 @@ const resultSchema = new mongoose.Schema({
 
 const Result = mongoose.model('Result', resultSchema);
 
-// Add batch schedules with AM/PM format
+// Add batch schedules using 24-hour format for more accurate validation
 const batchSchedules = {
-    '1Ace3': { start: '10:50 PM', duration: 5 }, // 10:50 PM - 10:55 PM
-    '2rgg4': { start: '10:55 PM', duration: 5 }, // 10:55 PM - 11:00 PM
-    '3Hce5': { start: '11:00 PM', duration: 5 }, // 11:00 PM - 11:05 PM
-    '4Kce6': { start: '11:05 PM', duration: 5 }  // 11:05 PM - 11:10 PM
+    '1Ace3': { start: '23:00', duration: 5 }, // 10:50 PM - 10:55 PM
+    '2rgg4': { start: '23:05', duration: 5 }, // 10:55 PM - 11:00 PM
+    '3Hce5': { start: '23:10', duration: 5 }, // 11:00 PM - 11:05 PM
+    '4Kce6': { start: '23:15', duration: 5 }  // 11:05 PM - 11:10 PM
 };
 
-// Function to validate batch time
+// Simplified and more accurate time validation
 function isBatchTimeValid(batchId) {
     const currentTime = new Date();
     const currentHours = currentTime.getHours();
     const currentMinutes = currentTime.getMinutes();
-    const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+    const currentTimeInMinutes = (currentHours * 60) + currentMinutes;
 
     const batch = batchSchedules[batchId];
     if (!batch) {
@@ -88,29 +88,19 @@ function isBatchTimeValid(batchId) {
         return false;
     }
 
-    // Parse AM/PM time
-    const [time, period] = batch.start.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-    
-    // Convert to 24-hour format for PM times
-    if (period === 'PM') {
-        if (hours !== 12) {
-            hours += 12;
-        }
-    } else if (period === 'AM' && hours === 12) {
-        hours = 0;
-    }
-
-    const startTimeInMinutes = hours * 60 + minutes;
+    // Parse start time (24-hour format)
+    const [hours, minutes] = batch.start.split(':').map(Number);
+    const startTimeInMinutes = (hours * 60) + minutes;
     const endTimeInMinutes = startTimeInMinutes + batch.duration;
 
-    console.log('Batch validation details:');
-    console.log('Current time:', currentTime.toLocaleTimeString());
-    console.log('Current time (minutes):', currentTimeInMinutes);
-    console.log('Batch start:', batch.start);
-    console.log('Start time (minutes):', startTimeInMinutes);
-    console.log('End time (minutes):', endTimeInMinutes);
-    console.log('Duration:', batch.duration);
+    console.log('Time validation:', {
+        currentTime: `${currentHours}:${currentMinutes}`,
+        currentTimeInMinutes,
+        batchStart: batch.start,
+        startTimeInMinutes,
+        endTimeInMinutes,
+        duration: batch.duration
+    });
 
     // Check if current time is within the batch window
     const isValid = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
