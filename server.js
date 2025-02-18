@@ -150,7 +150,7 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Update check-name endpoint to validate batch
+// Update check-name endpoint to require batchId
 app.post('/api/check-name', async (req, res) => {
     try {
         const { name } = req.body;
@@ -160,8 +160,16 @@ app.post('/api/check-name', async (req, res) => {
             throw new Error('Name is required');
         }
 
-        // Validate batch timing if batchId is provided
-        if (batchId && !isBatchTimeValid(batchId)) {
+        // Require batchId
+        if (!batchId) {
+            return res.status(400).json({
+                error: 'Missing batch ID',
+                message: 'Please use the correct batch link'
+            });
+        }
+
+        // Validate batch timing
+        if (!isBatchTimeValid(batchId)) {
             return res.status(403).json({
                 error: 'Invalid batch time',
                 message: 'This batch is not currently active'
