@@ -62,10 +62,10 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Add batch schedules with AM/PM format
 const batchSchedules = {
-    '1Ace3': { start: '10:40 PM', duration: 5 }, // 9:00 AM - 10:00 AM
-    '2rgg4': { start: '10:45 PM', duration: 5 }, // 10:00 AM - 11:00 AM
-    '3Hce5': { start: '10:50 PM', duration: 5 }, // 1:00 PM - 2:00 PM
-    '4Kce6': { start: '10:55 PM', duration: 5 }  // 2:00 PM - 3:00 PM
+    '1Ace3': { start: '10:50 PM', duration: 5 }, // 9:00 AM - 10:00 AM
+    '2rgg4': { start: '10:55 PM', duration: 5 }, // 10:00 AM - 11:00 AM
+    '3Hce5': { start: '11:00 PM', duration: 5 }, // 1:00 PM - 2:00 PM
+    '4Kce6': { start: '12:05 PM', duration: 5 }  // 2:00 PM - 3:00 PM
 };
 
 // Function to validate batch time
@@ -82,17 +82,23 @@ function isBatchTimeValid(batchId) {
     const [time, period] = batch.start.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
     
-    // Convert to 24-hour format
-    if (period === 'PM' && hours !== 12) {
-        hours += 12;
-    }
-    if (period === 'AM' && hours === 12) {
+    // Convert to 24-hour format for PM times
+    if (period === 'PM') {
+        if (hours !== 12) {
+            hours += 12;
+        }
+    } else if (period === 'AM' && hours === 12) {
         hours = 0;
     }
 
     const startTimeInMinutes = hours * 60 + minutes;
     const endTimeInMinutes = startTimeInMinutes + batch.duration;
 
+    console.log('Current time (minutes):', currentTimeInMinutes);
+    console.log('Start time (minutes):', startTimeInMinutes);
+    console.log('End time (minutes):', endTimeInMinutes);
+
+    // Check if current time is within the batch window
     return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
 }
 
