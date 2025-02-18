@@ -133,50 +133,29 @@ app.post('/api/save-result', async (req, res) => {
     try {
         const { name, score, completionTime, entryTime, batchId } = req.body;
         
+        console.log('Received save request:', { name, score, completionTime, entryTime, batchId });
+
         if (!name || score === undefined || !completionTime || !entryTime || !batchId) {
+            console.log('Missing fields:', { name, score, completionTime, entryTime, batchId });
             return res.status(400).json({
                 error: 'Missing required fields',
                 message: 'Please provide all required information'
             });
         }
 
-        // Get session data
-        const sessionKey = `${name}_${batchId}`;
-        const session = activeQuizSessions.get(sessionKey);
-
-        // If no session found, create one (for retry cases)
-        if (!session) {
-            const newSession = {
-                startTime: new Date(entryTime),
-                batchId: batchId
-            };
-            activeQuizSessions.set(sessionKey, newSession);
-        }
-
-        // Check if result already exists
-        const existingResult = await Result.findOne({ name, batchId });
-        if (existingResult) {
-            return res.status(400).json({
-                error: 'Result already exists',
-                message: 'Your result has already been saved'
-            });
-        }
-
-        // Create and save the result
+        // Create and save the result directly
         const result = new Result({
             name,
             score,
             completionTime,
             batchId,
-            quizStartTime: session ? session.startTime : new Date(entryTime),
+            quizStartTime: new Date(entryTime),
             entryTime: new Date(entryTime),
             submittedAt: new Date()
         });
 
         await result.save();
-        
-        // Clear session after successful save
-        activeQuizSessions.delete(sessionKey);
+        console.log('Result saved successfully:', result);
         
         res.json({ 
             success: true, 
@@ -185,9 +164,17 @@ app.post('/api/save-result', async (req, res) => {
         });
     } catch (error) {
         console.error('Save result error:', error);
+        
+        // Check for duplicate key error
+        if (error.code === 11000) {
+            return res.status(400).json({
+                error: 'Result already exists',
+                message: 'Your result has already been saved'
+            });
+        }
+
         res.status(500).json({ 
             error: 'Failed to save result',
-            details: error.message,
             message: 'Please try again'
         });
     }
