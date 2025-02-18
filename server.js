@@ -183,20 +183,30 @@ app.post('/api/save-result', async (req, res) => {
     }
 });
 
-// Modified leaderboard endpoint to sort by score and completion time
+// Modified leaderboard endpoint to handle view all
 app.get('/api/leaderboard', async (req, res) => {
     try {
         console.log('Fetching leaderboard...');
         
-        const results = await Result.find()
+        // Get the 'all' parameter from query
+        const showAll = req.query.all === 'true';
+        
+        // Create query with sort
+        const query = Result.find()
             .sort({ 
                 score: -1,  // First sort by score (highest first)
                 completionTime: 1,  // Then by completion time (lowest first)
                 submittedAt: -1  // If score and time are same, show most recent first
-            })
-            .limit(10);
+            });
+            
+        // Apply limit only if not showing all
+        if (!showAll) {
+            query.limit(10);
+        }
         
-        console.log('Found results:', results);
+        const results = await query;
+        
+        console.log(`Found ${results.length} results`);
         res.json(results);
     } catch (error) {
         console.error('Leaderboard fetch error:', error);
