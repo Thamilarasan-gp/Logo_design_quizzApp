@@ -33,7 +33,8 @@ mongoose.connect(uri, {
 const resultSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: true 
+        required: true ,
+        unique: true
     },
     score: { 
         type: Number, 
