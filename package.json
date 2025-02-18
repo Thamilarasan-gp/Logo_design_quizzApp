@@ -9,10 +9,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "moment-timezone": "^0.5.47",
     "mongoose": "^5.13.23",
     "react-router-dom": "^7.1.5"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"

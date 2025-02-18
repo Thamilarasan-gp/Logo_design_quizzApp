@@ -2,6 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const moment = require('moment-timezone');
 const app = express();
 
 // Middleware
@@ -69,18 +70,19 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Update batch schedules with correct times and comments
 const batchSchedules = {
-    '1Ace3': { start: '23:12', duration: 5 }, // 23:05 - 23:10
-    '2rgg4': { start: '23:17', duration: 5 }, // 23:10 - 23:15
-    '3Hce5': { start: '23:22', duration: 5 }, // 23:15 - 23:20
-    '4Kce6': { start: '23:27', duration: 5 }  // 23:20 - 23:25
+    '1Ace3': { start: '23:12', duration: 5 }, // 23:12 - 23:17
+    '2rgg4': { start: '23:17', duration: 5 }, // 23:17 - 23:22
+    '3Hce5': { start: '23:22', duration: 5 }, // 23:22 - 23:27
+    '4Kce6': { start: '23:27', duration: 5 }  // 23:27 - 23:32
 };
 
 // Improved time validation with better logging
 function isBatchTimeValid(batchId) {
     // Get current time in IST/local timezone
-    const currentTime = new Date();
-    const currentHours = currentTime.getHours();
-    const currentMinutes = currentTime.getMinutes();
+
+    const currentTime = moment().tz('Asia/Kolkata');
+    const currentHours = currentTime.hours();
+    const currentMinutes = currentTime.minutes();
     const currentTimeInMinutes = (currentHours * 60) + currentMinutes;
 
     const batch = batchSchedules[batchId];
@@ -97,7 +99,7 @@ function isBatchTimeValid(batchId) {
     // Detailed logging for debugging
     console.log({
         batchId,
-        currentDateTime: currentTime.toLocaleString(),
+        currentDateTime: currentTime.format('YYYY-MM-DD HH:mm:ss'),
         currentTime: `${currentHours}:${currentMinutes}`,
         currentTimeInMinutes,
         batchStartTime: batch.start,
