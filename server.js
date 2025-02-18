@@ -33,7 +33,7 @@ mongoose.connect(uri, {
 const resultSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: true ,
+        required: true,
         unique: true
     },
     score: { 
@@ -47,14 +47,21 @@ const resultSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
-    entryTime: {      // Add entry time
+    batchId: {
+        type: String,
+        required: true
+    },
+    quizStartTime: {      // Add quiz start time
+        type: Date,
+        required: true
+    },
+    entryTime: {
         type: Date,
         required: true
     },
     submittedAt: {
         type: Date,
-        required: true,
-        // Remove the default value to ensure each entry gets its own timestamp
+        required: true
     }
 });
 
@@ -62,10 +69,10 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Add batch schedules with AM/PM format
 const batchSchedules = {
-    '1Ace3': { start: '10:50 PM', duration: 5 }, // 9:00 AM - 10:00 AM
-    '2rgg4': { start: '10:55 PM', duration: 5 }, // 10:00 AM - 11:00 AM
-    '3Hce5': { start: '11:00 PM', duration: 5 }, // 1:00 PM - 2:00 PM
-    '4Kce6': { start: '12:05 PM', duration: 5 }  // 2:00 PM - 3:00 PM
+    '1Ace3': { start: '10:50 PM', duration: 5 }, // 10:50 PM - 10:55 PM
+    '2rgg4': { start: '10:55 PM', duration: 5 }, // 10:55 PM - 11:00 PM
+    '3Hce5': { start: '11:00 PM', duration: 5 }, // 11:00 PM - 11:05 PM
+    '4Kce6': { start: '11:05 PM', duration: 5 }  // 11:05 PM - 11:10 PM
 };
 
 // Function to validate batch time
@@ -76,7 +83,10 @@ function isBatchTimeValid(batchId) {
     const currentTimeInMinutes = currentHours * 60 + currentMinutes;
 
     const batch = batchSchedules[batchId];
-    if (!batch) return false;
+    if (!batch) {
+        console.log('Invalid batch ID:', batchId);
+        return false;
+    }
 
     // Parse AM/PM time
     const [time, period] = batch.start.split(' ');
@@ -94,45 +104,54 @@ function isBatchTimeValid(batchId) {
     const startTimeInMinutes = hours * 60 + minutes;
     const endTimeInMinutes = startTimeInMinutes + batch.duration;
 
+    console.log('Batch validation details:');
+    console.log('Current time:', currentTime.toLocaleTimeString());
     console.log('Current time (minutes):', currentTimeInMinutes);
+    console.log('Batch start:', batch.start);
     console.log('Start time (minutes):', startTimeInMinutes);
     console.log('End time (minutes):', endTimeInMinutes);
+    console.log('Duration:', batch.duration);
 
     // Check if current time is within the batch window
-    return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+    const isValid = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+    console.log('Is valid:', isValid);
+
+    return isValid;
 }
+
+// Add session tracking
+const activeQuizSessions = new Map();
 
 // Modified save result endpoint
 app.post('/api/save-result', async (req, res) => {
     try {
-        const { name, score, completionTime, entryTime } = req.body;
-        console.log('Received save request:', { name, score, completionTime, entryTime });
+        const { name, score, completionTime, entryTime, batchId } = req.body;
+        
+        const sessionKey = `${name}_${batchId}`;
+        const session = activeQuizSessions.get(sessionKey);
 
-        if (!name || score === undefined || !completionTime || !entryTime) {
-            throw new Error('Required fields are missing');
-        }
-
-        // Check if name already exists
-        const existingUser = await Result.findOne({ name: name });
-        if (existingUser) {
-            return res.status(400).json({ 
-                error: 'Name already exists',
-                message: 'Please choose a different name'
+        if (!session) {
+            return res.status(400).json({
+                error: 'Invalid session',
+                message: 'No active quiz session found'
             });
         }
 
-        // Create a new result with current timestamp
-        const currentTime = new Date();
         const result = new Result({
             name,
             score,
             completionTime,
+            batchId,
+            quizStartTime: session.startTime,
             entryTime: new Date(entryTime),
-            submittedAt: currentTime
+            submittedAt: new Date()
         });
 
         await result.save();
-        console.log('Result saved successfully:', result);
+        
+        // Clear session after saving
+        activeQuizSessions.delete(sessionKey);
+        
         res.json({ success: true, result });
     } catch (error) {
         console.error('Save result error:', error);
@@ -167,7 +186,7 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Update check-name endpoint to require batchId
+// Update check-name endpoint to track quiz start time
 app.post('/api/check-name', async (req, res) => {
     try {
         const { name } = req.body;
@@ -187,6 +206,12 @@ app.post('/api/check-name', async (req, res) => {
 
         // Validate batch timing
         if (!isBatchTimeValid(batchId)) {
+            // Check if user already started quiz in valid time
+            const sessionKey = `${name}_${batchId}`;
+            if (activeQuizSessions.has(sessionKey)) {
+                return res.json({ success: true, message: 'Continue quiz session' });
+            }
+
             return res.status(403).json({
                 error: 'Invalid batch time',
                 message: 'This batch is not currently active'
@@ -201,6 +226,13 @@ app.post('/api/check-name', async (req, res) => {
                 message: 'Please choose a different name'
             });
         }
+
+        // Track quiz start time
+        const sessionKey = `${name}_${batchId}`;
+        activeQuizSessions.set(sessionKey, {
+            startTime: new Date(),
+            batchId: batchId
+        });
 
         res.json({ success: true, message: 'Name is available' });
     } catch (error) {
