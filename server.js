@@ -70,10 +70,17 @@ app.post('/api/save-result', async (req, res) => {
             throw new Error('Required fields are missing');
         }
 
+        // Check if name already exists
+        const existingUser = await Result.findOne({ name: name });
+        if (existingUser) {
+            return res.status(400).json({ 
+                error: 'Name already exists',
+                message: 'Please choose a different name'
+            });
+        }
+
         // Create a new result with current timestamp
         const currentTime = new Date();
-        console.log('Saving with timestamp:', currentTime);
-
         const result = new Result({
             name,
             score,
