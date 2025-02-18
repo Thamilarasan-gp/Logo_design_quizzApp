@@ -60,6 +60,31 @@ const resultSchema = new mongoose.Schema({
 
 const Result = mongoose.model('Result', resultSchema);
 
+// Add batch schedules
+const batchSchedules = {
+    '1Ace3': { start: '09:00', duration: 60 }, // 9 AM - 10 AM
+    '2rgg4': { start: '10:00', duration: 60 }, // 10 AM - 11 AM
+    '3Hce5': { start: '11:00', duration: 60 }, // 11 AM - 12 PM
+    '4Kce6': { start: '12:00', duration: 60 }  // 12 PM - 1 PM
+};
+
+// Function to validate batch time
+function isBatchTimeValid(batchId) {
+    const currentTime = new Date();
+    const currentHours = currentTime.getHours();
+    const currentMinutes = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+
+    const batch = batchSchedules[batchId];
+    if (!batch) return false;
+
+    const [startHours, startMinutes] = batch.start.split(':').map(Number);
+    const startTimeInMinutes = startHours * 60 + startMinutes;
+    const endTimeInMinutes = startTimeInMinutes + batch.duration;
+
+    return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+}
+
 // Modified save result endpoint
 app.post('/api/save-result', async (req, res) => {
     try {
@@ -125,13 +150,22 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Add new endpoint to check name availability
+// Update check-name endpoint to validate batch
 app.post('/api/check-name', async (req, res) => {
     try {
         const { name } = req.body;
+        const { batchId } = req.query;
         
         if (!name) {
             throw new Error('Name is required');
+        }
+
+        // Validate batch timing if batchId is provided
+        if (batchId && !isBatchTimeValid(batchId)) {
+            return res.status(403).json({
+                error: 'Invalid batch time',
+                message: 'This batch is not currently active'
+            });
         }
 
         // Check if name already exists
