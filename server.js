@@ -62,10 +62,10 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Add batch schedules with AM/PM format
 const batchSchedules = {
-    '1Ace3': { start: '10:30 PM', duration: 5 }, // 9:00 AM - 10:00 AM
-    '2rgg4': { start: '10:35 PM', duration: 5 }, // 10:00 AM - 11:00 AM
-    '3Hce5': { start: '10:40 PM', duration: 5 }, // 1:00 PM - 2:00 PM
-    '4Kce6': { start: '10:45 PM', duration: 5 }  // 2:00 PM - 3:00 PM
+    '1Ace3': { start: '10:40 PM', duration: 5 }, // 9:00 AM - 10:00 AM
+    '2rgg4': { start: '10:45 PM', duration: 5 }, // 10:00 AM - 11:00 AM
+    '3Hce5': { start: '10:50 PM', duration: 5 }, // 1:00 PM - 2:00 PM
+    '4Kce6': { start: '10:55 PM', duration: 5 }  // 2:00 PM - 3:00 PM
 };
 
 // Function to validate batch time
