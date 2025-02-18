@@ -128,14 +128,14 @@ testBatchValidation();
 // Add session tracking
 const activeQuizSessions = new Map();
 
-// Modified save result endpoint with retry logic
+// Modified save result endpoint
 app.post('/api/save-result', async (req, res) => {
     try {
-        const { name, score, completionTime, entryTime } = req.body;
-        const { batchId } = req.query; // Extract batchId from query parameters
+        const { name, score, completionTime, entryTime, batchId } = req.body;
         
         console.log('Received save request:', { name, score, completionTime, entryTime, batchId });
 
+        // Validate required fields
         if (!name || score === undefined || !completionTime || !entryTime || !batchId) {
             console.log('Missing fields:', { name, score, completionTime, entryTime, batchId });
             return res.status(400).json({
@@ -144,7 +144,7 @@ app.post('/api/save-result', async (req, res) => {
             });
         }
 
-        // Create and save the result directly
+        // Create new result
         const result = new Result({
             name,
             score,
@@ -155,6 +155,7 @@ app.post('/api/save-result', async (req, res) => {
             submittedAt: new Date()
         });
 
+        // Save result
         await result.save();
         console.log('Result saved successfully:', result);
         
@@ -163,6 +164,7 @@ app.post('/api/save-result', async (req, res) => {
             result,
             message: 'Result saved successfully'
         });
+
     } catch (error) {
         console.error('Save result error:', error);
         
@@ -174,33 +176,10 @@ app.post('/api/save-result', async (req, res) => {
             });
         }
 
-        // Retry saving the result
-        try {
-            const result = new Result({
-                name,
-                score,
-                completionTime,
-                batchId,
-                quizStartTime: new Date(entryTime),
-                entryTime: new Date(entryTime),
-                submittedAt: new Date()
-            });
-
-            await result.save();
-            console.log('Result saved successfully on retry:', result);
-            
-            res.json({ 
-                success: true, 
-                result,
-                message: 'Result saved successfully'
-            });
-        } catch (retryError) {
-            console.error('Retry save result error:', retryError);
-            res.status(500).json({ 
-                error: 'Failed to save result',
-                message: 'Please try again'
-            });
-        }
+        res.status(500).json({ 
+            error: 'Failed to save result',
+            message: 'Please try again'
+        });
     }
 });
 
