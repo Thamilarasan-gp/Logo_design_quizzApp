@@ -128,42 +128,67 @@ testBatchValidation();
 // Add session tracking
 const activeQuizSessions = new Map();
 
-// Modified save result endpoint
+// Modified save result endpoint with better error handling
 app.post('/api/save-result', async (req, res) => {
     try {
         const { name, score, completionTime, entryTime, batchId } = req.body;
         
-        const sessionKey = `${name}_${batchId}`;
-        const session = activeQuizSessions.get(sessionKey);
-
-        if (!session) {
+        if (!name || score === undefined || !completionTime || !entryTime || !batchId) {
             return res.status(400).json({
-                error: 'Invalid session',
-                message: 'No active quiz session found'
+                error: 'Missing required fields',
+                message: 'Please provide all required information'
             });
         }
 
+        // Get session data
+        const sessionKey = `${name}_${batchId}`;
+        const session = activeQuizSessions.get(sessionKey);
+
+        // If no session found, create one (for retry cases)
+        if (!session) {
+            const newSession = {
+                startTime: new Date(entryTime),
+                batchId: batchId
+            };
+            activeQuizSessions.set(sessionKey, newSession);
+        }
+
+        // Check if result already exists
+        const existingResult = await Result.findOne({ name, batchId });
+        if (existingResult) {
+            return res.status(400).json({
+                error: 'Result already exists',
+                message: 'Your result has already been saved'
+            });
+        }
+
+        // Create and save the result
         const result = new Result({
             name,
             score,
             completionTime,
             batchId,
-            quizStartTime: session.startTime,
+            quizStartTime: session ? session.startTime : new Date(entryTime),
             entryTime: new Date(entryTime),
             submittedAt: new Date()
         });
 
         await result.save();
         
-        // Clear session after saving
+        // Clear session after successful save
         activeQuizSessions.delete(sessionKey);
         
-        res.json({ success: true, result });
+        res.json({ 
+            success: true, 
+            result,
+            message: 'Result saved successfully'
+        });
     } catch (error) {
         console.error('Save result error:', error);
         res.status(500).json({ 
             error: 'Failed to save result',
-            details: error.message 
+            details: error.message,
+            message: 'Please try again'
         });
     }
 });
