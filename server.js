@@ -125,6 +125,34 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
+// Add new endpoint to check name availability
+app.post('/api/check-name', async (req, res) => {
+    try {
+        const { name } = req.body;
+        
+        if (!name) {
+            throw new Error('Name is required');
+        }
+
+        // Check if name already exists
+        const existingUser = await Result.findOne({ name: name });
+        if (existingUser) {
+            return res.status(400).json({ 
+                error: 'Name already exists',
+                message: 'Please choose a different name'
+            });
+        }
+
+        res.json({ success: true, message: 'Name is available' });
+    } catch (error) {
+        console.error('Name check error:', error);
+        res.status(500).json({ 
+            error: 'Failed to check name',
+            details: error.message 
+        });
+    }
+});
+
 // Add error handling for the server
 app.listen(3000, () => {
     console.log('Server running on port 3000');
