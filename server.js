@@ -60,6 +60,31 @@ const resultSchema = new mongoose.Schema({
 
 const Result = mongoose.model('Result', resultSchema);
 
+// Add batch schedules
+const batchSchedules = {
+    'batch1': { start: '09:00', duration: 60 }, // 9 AM - 10 AM
+    'batch2': { start: '10:00', duration: 60 }, // 10 AM - 11 AM
+    'batch3': { start: '11:00', duration: 60 }, // 11 AM - 12 PM
+    'batch4': { start: '12:00', duration: 60 }  // 12 PM - 1 PM
+};
+
+// Function to validate batch time
+function isBatchTimeValid(batchId) {
+    const currentTime = new Date();
+    const currentHours = currentTime.getHours();
+    const currentMinutes = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+
+    const batch = batchSchedules[batchId];
+    if (!batch) return false;
+
+    const [startHours, startMinutes] = batch.start.split(':').map(Number);
+    const startTimeInMinutes = startHours * 60 + startMinutes;
+    const endTimeInMinutes = startTimeInMinutes + batch.duration;
+
+    return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+}
+
 // Modified save result endpoint
 app.post('/api/save-result', async (req, res) => {
     try {
@@ -125,13 +150,32 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Add new endpoint to check name availability
+// Modify the check-name endpoint
 app.post('/api/check-name', async (req, res) => {
     try {
         const { name } = req.body;
         
         if (!name) {
             throw new Error('Name is required');
+        }
+
+        // Extract batchId from name
+        const parts = name.split('_');
+        if (parts.length !== 3) {
+            return res.status(400).json({ 
+                error: 'Invalid name format',
+                message: 'Please use format: name_rollno_batchid'
+            });
+        }
+
+        const batchId = parts[2];
+        
+        // Validate batch timing
+        if (!isBatchTimeValid(batchId)) {
+            return res.status(403).json({ 
+                error: 'Invalid batch',
+                message: 'This batch is not currently active'
+            });
         }
 
         // Check if name already exists
