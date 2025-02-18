@@ -69,10 +69,10 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Add batch schedules using 24-hour format for more accurate validation
 const batchSchedules = {
-    '1Ace3': { start: '23:00', duration: 5 }, // 10:50 PM - 10:55 PM
-    '2rgg4': { start: '23:05', duration: 5 }, // 10:55 PM - 11:00 PM
-    '3Hce5': { start: '23:10', duration: 5 }, // 11:00 PM - 11:05 PM
-    '4Kce6': { start: '23:15', duration: 5 }  // 11:05 PM - 11:10 PM
+    '1Ace3': { start: '23:05', duration: 5 }, // 10:50 PM - 10:55 PM
+    '2rgg4': { start: '23:10', duration: 5 }, // 10:55 PM - 11:00 PM
+    '3Hce5': { start: '23:15', duration: 5 }, // 11:00 PM - 11:05 PM
+    '4Kce6': { start: '23:20', duration: 5 }  // 11:05 PM - 11:10 PM
 };
 
 // Simplified and more accurate time validation
