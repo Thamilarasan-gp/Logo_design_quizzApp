@@ -67,16 +67,17 @@ const resultSchema = new mongoose.Schema({
 
 const Result = mongoose.model('Result', resultSchema);
 
-// Add batch schedules using 24-hour format for more accurate validation
+// Update batch schedules with correct times and comments
 const batchSchedules = {
-    '1Ace3': { start: '23:05', duration: 5 }, // 10:50 PM - 10:55 PM
-    '2rgg4': { start: '23:10', duration: 5 }, // 10:55 PM - 11:00 PM
-    '3Hce5': { start: '23:15', duration: 5 }, // 11:00 PM - 11:05 PM
-    '4Kce6': { start: '23:20', duration: 5 }  // 11:05 PM - 11:10 PM
+    '1Ace3': { start: '23:12', duration: 5 }, // 23:05 - 23:10
+    '2rgg4': { start: '23:17', duration: 5 }, // 23:10 - 23:15
+    '3Hce5': { start: '23:22', duration: 5 }, // 23:15 - 23:20
+    '4Kce6': { start: '23:27', duration: 5 }  // 23:20 - 23:25
 };
 
-// Simplified and more accurate time validation
+// Improved time validation with better logging
 function isBatchTimeValid(batchId) {
+    // Get current time in IST/local timezone
     const currentTime = new Date();
     const currentHours = currentTime.getHours();
     const currentMinutes = currentTime.getMinutes();
@@ -93,21 +94,34 @@ function isBatchTimeValid(batchId) {
     const startTimeInMinutes = (hours * 60) + minutes;
     const endTimeInMinutes = startTimeInMinutes + batch.duration;
 
-    console.log('Time validation:', {
+    // Detailed logging for debugging
+    console.log({
+        batchId,
+        currentDateTime: currentTime.toLocaleString(),
         currentTime: `${currentHours}:${currentMinutes}`,
         currentTimeInMinutes,
-        batchStart: batch.start,
+        batchStartTime: batch.start,
         startTimeInMinutes,
         endTimeInMinutes,
-        duration: batch.duration
+        duration: batch.duration,
+        isWithinWindow: currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes
     });
 
-    // Check if current time is within the batch window
-    const isValid = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
-    console.log('Is valid:', isValid);
-
-    return isValid;
+    // Check if current time is within the batch window (inclusive)
+    return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
 }
+
+// Add test function to verify time validation
+function testBatchValidation() {
+    console.log('Testing batch validation:');
+    Object.keys(batchSchedules).forEach(batchId => {
+        const isValid = isBatchTimeValid(batchId);
+        console.log(`Batch ${batchId}: ${isValid ? 'ACTIVE' : 'INACTIVE'}`);
+    });
+}
+
+// Run test on server start
+testBatchValidation();
 
 // Add session tracking
 const activeQuizSessions = new Map();
