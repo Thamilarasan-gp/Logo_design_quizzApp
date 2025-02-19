@@ -70,10 +70,10 @@ const Result = mongoose.model('Result', resultSchema);
 
 // Update batch schedules with correct times and comments
 const batchSchedules = {
-    '1Ace3': { start: '23:00', duration: 60 }, // 23:12 - 23:17
-    '2rgg4': { start: '00:00', duration: 60 }, // 23:17 - 23:22
-    '3Hce5': { start: '1:00', duration: 60 }, // 23:22 - 23:27
-    '4Kce6': { start: '2:00', duration: 60 }  // 23:27 - 23:32
+    '1Ace3': { start: '13:00', duration: 60 }, // 23:12 - 23:17
+    '2rgg4': { start: '14:00', duration: 60 }, // 23:17 - 23:22
+    '3Hce5': { start: '15:00', duration: 60 }, // 23:22 - 23:27
+    '4Kce6': { start: '16:00', duration: 60 }  // 23:27 - 23:32
 };
 
 // Improved time validation with better logging
